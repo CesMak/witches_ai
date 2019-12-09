@@ -3,17 +3,6 @@ import random
 # Author Markus Lamprecht (www.simact.de) 08.12.2019
 # A card game named Witches:
 
-# Rules:
-#	60	   Cards(4xJoker, 1-14 in Yellow, Green, Red, Blue)
-#	Red    Cards give -1 Point (except Red 11)
-#	Blue   Cards do nothing    (except Blue 11 if you have it in your offhand deletes all Green -Points)
-#	Green  Cards			   (except Green 11 -5 and Green 12 -10 Points)
-# 	Yellow Cards do nothing    (except Yellow 11 +5)
-#	A joker can be placed anytime otherwise you have to give the same color as the first player
-#	Aim:	Have a minimum of minus Points!
-# 	Note: Number 15 is a Joker
-
-
 # TODO:
 #       implement Giving cards (2cards to right, 2cards left, 2cards straigth) [for 4 Players]
 #		Add additional plus points(2) if your offhand is empty!
@@ -23,28 +12,23 @@ import random
 #				added player style random and minimum
 
 
-#Links:
-# Basic code for Card Games
-#	from: https://github.com/eli-byers/Deck-Of-Cards-Python/blob/master/deckofcards.py
-# Schafkopf
-#	is available at: https://github.com/bornabesic/belot
-#	RL: https://github.com/bornabesic/belot/blob/master/players/PlayerRL/policy.py
-# BlackJack card game explained with many pytorch algorithms:
-#			https://books.google.de/books?id=JUC7DwAAQBAJ&pg=PA98&lpg=PA98&dq=pytorch+card+game&source=bl&ots=FR7Jsuclds&sig=ACfU3U3diiR0kR-zlEWNFg8XNZ4aJiWDcA&hl=de&sa=X&ved=2ahUKEwiHnrqc66XmAhXJZlAKHQFHBuUQ6AEwCHoECAkQAQ#v=onepage&q=pytorch%20card%20game&f=false
-# Reinforcement Library for Card Games:
-#	https://github.com/datamllab/rlcard
-#	Paper: https://arxiv.org/abs/1910.04376
-# Question on how to setup the input of a Card Game:
-#	https://ai.stackexchange.com/questions/7049/dqn-input-representation-for-a-card-game
-#	Answer1: binary
-#	Another option is a single (40,) vector, with 0 being "still in deck", 1 being "in hand", 2 being "on table", 3 being "already played".
-#	but a common approach for extracting actions is to have one output neuron for each possible action. To select an action, you would pick the one corresponding to the neuron with the highest output response to a given input.
+# Links:
+# * Basic code for Card Games
+# *	from: https://github.com/eli-byers/Deck-Of-Cards-Python/blob/master/deckofcards.py
+# * Schafkopf
+# *	is available at: https://github.com/bornabesic/belot
+# *	RL: https://github.com/bornabesic/belot/blob/master/players/PlayerRL/policy.py
+# * BlackJack card game explained with many pytorch algorithms:
+# *			https://books.google.de/books?id=JUC7DwAAQBAJ&pg=PA98&lpg=PA98&dq=pytorch+card+game&source=bl&ots=FR7Jsuclds&sig=ACfU3U3diiR0kR-zlEWNFg8XNZ4aJiWDcA&hl=de&sa=X&ved=2ahUKEwiHnrqc66XmAhXJZlAKHQFHBuUQ6AEwCHoECAkQAQ*v=onepage&q=pytorch%20card%20game&f=false
+# * Reinforcement Library for Card Games:
+# *	https://github.com/datamllab/rlcard
+# *	Paper: https://arxiv.org/abs/1910.04376
+# * Question on how to setup the input of a Card Game:
+# *	https://ai.stackexchange.com/questions/7049/dqn-input-representation-for-a-card-game
+# *	Answer1: binary
+# *	Another option is a single (40,) vector, with 0 being "still in deck", 1 being "in hand", 2 being "on table", 3 being "already played".
+# *	but a common approach for extracting actions is to have one output neuron for each possible action. To select an action, you would pick the one corresponding to the neuron with the highest output response to a given input.
 
-#Stats:
-# 		For 4 Players, played 50.000 Rounds
-# 		If Player 0 has to start and plays a random card he will have a minus of -6.025 for each game
-# 		Not Player 0  random	-5.85 each game
-# 		Not Player 0  mini	    -5.80 each game
 
 # RL: Deep Q-Learning Network (DQN) with replay memory
 # Actions:	are basically the options of cards that can be played
@@ -482,7 +466,3 @@ class game(object):
 
 		for player in self.players:
 			print(player.name, "\tTotal Result:", player.total_result)
-
-# my_game = game(["Tim", "Bob", "Lena", "Anja"])
-# my_game.play_round_until_ai(player_to_start=2)
-#my_game.play_multiple_games(1)
