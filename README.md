@@ -25,9 +25,14 @@ As binary (a vector of 180 bool)
 *    If the ai is not first player it has to respect the first played card (or play a wizzard)
 This means there is actually a list of available options. I then sort this list and have 60 Output bools which I set to 1 if this option is possible. Among these options the ai should then decide what the correct option is.
 
+### Inconsistent Action Space
+As explained [here](https://ai.stackexchange.com/questions/9491/inconsistent-action-space-in-reinforcement-learning) this card game has an inconsistent action space (for different states the action set has a different size). E.g. snake has a discrete action space. You always have 3 actions (Right, Left, Straight). One reason why it is very difficult to solve card games using DQN is that these require one output node for every action, which means you have to enumerate all actions. Similar policy gradient traditionally also require one output node per action, which again means you have to be able to enumerate all the actions in advance (when determining the network architecture).
+However [here](https://discuss.pytorch.org/t/how-to-implement-action-sampling-for-differing-allowed-actions/14481) it is said that for Policy Gradient method: By setting the forbidden actions probabilities to zero, your agent will only explore the allowed ones and learn what is the best action out of the allowed set.
+
 ## TODO:
 * respect: [evaluating the value of the state after the action with your neural network instead of the value of a action](https://ai.stackexchange.com/questions/16999/dqn-card-game-how-to-represent-the-actions)
-* Have a look into: [github_rlcards](https://github.com/datamllab/rlcard) [and this paper](https://arxiv.org/abs/1910.04376)
+* Have a look into: [github_rlcards](https://github.com/datamllab/rlcard) and [this paper](https://arxiv.org/abs/1910.04376)
+* Have a look to    [uno](https://github.com/datamllab/rlcard/blob/master/examples/uno_dqn.py)
 
 ## Stats for AI
 * Currently the train_long_memory does not work at all nevertheless, the ai player seems to learn something:
