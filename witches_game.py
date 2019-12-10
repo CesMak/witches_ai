@@ -28,7 +28,7 @@ import random
 # *	Answer1: binary
 # *	Another option is a single (40,) vector, with 0 being "still in deck", 1 being "in hand", 2 being "on table", 3 being "already played".
 # *	but a common approach for extracting actions is to have one output neuron for each possible action. To select an action, you would pick the one corresponding to the neuron with the highest output response to a given input.
-
+#https://ai.stackexchange.com/questions/16999/dqn-card-game-how-to-represent-the-actions/17001#17001
 
 # RL: Deep Q-Learning Network (DQN) with replay memory
 # Actions:	are basically the options of cards that can be played
@@ -171,15 +171,21 @@ class player(object):
 				index        = i
 		return index
 
-	def playCard(self, incolor):
+	def playCard(self, incolor, input_card = None, is_ai_player=0):
+		if is_ai_player: # ai player
+			idx_of_card =  self.specificIndexHand(input_card)
+			print("idx of ai card to be played:", idx_of_card)
+			return self.hand.pop(idx_of_card)
+
 		options = (self.getOptions(incolor))
 		print("Your options:", options)
 		card_idx = 0
 		if self.player_style==0:
 			rand_card = random.randrange(len(options))
-			card_idx = options[rand_card][0]
+			card_idx  = options[rand_card][0]
 		elif self.player_style==1:
-			card_idx = 	self.getMinimumValue(options)
+			card_idx  = 	self.getMinimumValue(options)
+
 		return self.hand.pop(card_idx)
 
 	def hasYellowEleven(self):
@@ -190,6 +196,12 @@ class player(object):
 
 	def hasBlueEleven(self):
 		return self.hasSpecificCard(11, "Blue")
+
+	def specificIndexHand(self, incard):
+			for i, card in enumerate(self.hand):
+				if card.color == incard.color and card.value == incard.value:
+					return i
+			return 0
 
 	def hasSpecificCard(self, cardValue, cardColor):
 		for stich in self.offhand:
@@ -233,7 +245,8 @@ class game(object):
 		self.card_before	   = None # added for AI-Gamer
 		self.ai_player_idx     = 1    # added for AI-Gamer
 		self.player_idx        = []   # added for AI-Gamer
-		self.start_player      = 0    # added for AI-Gamer
+		self.start_player      = 0    # added for AI-Gamer of one round the start player
+		self.game_start_player = 0
 		self.setup_game()
 
 	# generate a Game:
@@ -254,6 +267,17 @@ class game(object):
 			p.sayHello()
 			p.showHand()
 		print("The Deck is now:", myDeck.show(), " empty \n \n")
+
+	def reset_ai_game(self):
+		self.start_player      = self.nextGamePlayer()
+		self.player_idx        = []
+		self.first_played_card = None # added for AI-Gamer
+		self.card_before	   = None # added for AI-Gamer
+		self.cards_of_round    = []
+		self.active_player     = self.start_player
+		self.current_round     = 0
+		self.reset_game()
+		self.played_cards = []
 
 	def reset_game(self):
 		myDeck = deck()
@@ -276,6 +300,13 @@ class game(object):
 				tmp = i
 		return winning_card, tmp
 
+	def nextGamePlayer(self):
+		if self.game_start_player < self.nu_players-1:
+			self.game_start_player+=1
+		else:
+			self.game_start_player = 0
+		return self.game_start_player
+
 	def getNextPlayer(self):
 		if self.active_player < self.nu_players-1:
 			self.active_player+=1
@@ -287,7 +318,7 @@ class game(object):
 		print("inside play first card")
 		self.player_idx = [self.start_player]
 		if self.start_player >= (self.nu_players):
-			print("Error this player does not exist:", player_to_start, " only", len(self.nu_players), " availabe")
+			print("Error this player does not exist:", self.player_to_start, " only", len(self.nu_players), " availabe")
 			return None
 		self.active_player = self.start_player
 		self.first_played_card = self.players[self.active_player].playCard(None)
@@ -308,17 +339,15 @@ class game(object):
 		print("Player: ", self.active_player, self.names_player[self.active_player], ":\t", curr_card, " curr result", self.players[self.active_player].countResult())
 		self.cards_of_round.append(curr_card)
 
-	def play_ai_card(self, first_move=0, player_to_start=0):
+	def play_ai_card(self, ai_action, first_move=0):
 		print("play ai card")
 		if first_move:
-			self.player_idx = [player_to_start]
-			if player_to_start >= (self.nu_players):
-				print("Error this player does not exist:", player_to_start, " only", len(self.nu_players), " availabe")
+			self.player_idx = [self.start_player]
+			if self.start_player >= (self.nu_players):
+				print("Error this player does not exist:", self.start_player, " only", len(self.nu_players), " availabe")
 				return None
-			self.active_player = player_to_start
-			# TODO:
-			self.first_played_card = self.players[self.active_player].playCard(None)
-			#
+			self.active_player = self.start_player
+			self.first_played_card = self.players[self.active_player].playCard(None, input_card=self.action2Card(ai_action), is_ai_player=1)
 			self.cards_of_round.append(self.first_played_card)
 			self.played_cards.append(self.first_played_card)
 			self.card_before = self.first_played_card
@@ -328,7 +357,7 @@ class game(object):
 			if self.card_before.value == 15: # in case of a Narr!
 				incolor = None
 			# TODO:
-			curr_card = self.players[self.active_player].playCard(incolor)
+			curr_card = self.players[self.active_player].playCard(None, input_card=self.action2Card(ai_action), is_ai_player=1)
 			#
 			self.card_before = curr_card
 			self.player_idx.append(self.active_player)
@@ -336,13 +365,13 @@ class game(object):
 			print("Player: ", self.active_player, self.names_player[self.active_player], ":\t", curr_card, " curr result", self.players[self.active_player].countResult())
 			self.cards_of_round.append(curr_card)
 
-	def finishRound(self, player_to_start = 0, state_for_ai_move=None):
+	def finishRound(self, ai_action):
 		print("inside finish Round!")
-
+		ai_score_before = self.players[self.ai_player_idx].countResult()
 		#AI has first move?
 		if len(self.cards_of_round) == 0:
 			print("AI has first move")
-			self.play_ai_card(player_to_start, first_move=1)
+			self.play_ai_card(ai_action, first_move=1)
 
 			# do other moves:
 			for i in range(self.nu_players-len(self.cards_of_round)):
@@ -352,13 +381,29 @@ class game(object):
 			for i in range(self.nu_players-len(self.cards_of_round)):
 				if i != 0: self.active_player = self.getNextPlayer()
 				if self.active_player == self.ai_player_idx:
-					print("return go out here with state! Its now ai players turn")
-					self.play_ai_card(first_move=0)
-					return
+					self.play_ai_card(ai_action, first_move=0)
 				else:
 					self.playOtherCard()
-		# give score etc back here!
-		#reset round (player_to_start etc!) -> evaluate winner!
+
+		winning_card, i = self.evaluate_winner(self.first_played_card.color, self.cards_of_round)
+		print("Wining Card:", winning_card, "Player that won:", self.player_idx[i])
+		done   =  ((self.total_rounds-1)==self.current_round)
+		self.players[self.player_idx[i]].appendCards(self.cards_of_round)
+		ai_score_after = self.players[self.ai_player_idx].countResult()
+		reward = ai_score_after-ai_score_before
+		score  = ai_score_after
+		print("Reward:", reward, "Done:", done, "Score:", score, "Round:", self.current_round,"\n")
+		#reset round
+
+		self.start_player      = self.player_idx[i]
+		self.player_idx        = []
+		self.first_played_card = None # added for AI-Gamer
+		self.card_before	   = None # added for AI-Gamer
+		self.cards_of_round    = []
+		self.active_player     = self.start_player
+		self.current_round     +=1
+
+		return reward, done, score, [self.players[0].countResult(), self.players[2].countResult(), self.players[3].countResult()]
 
 	def play_round_until_ai(self):
 		print("inside play_round_until_ai round")
@@ -426,6 +471,29 @@ class game(object):
 			result_idx = 15*3+card.value-1
 		return result_idx
 
+	def translateOptions(self, options):
+		options_list = [0]*60
+		for opt in options:
+			[i, card] = opt
+			options_list[self.getCardIndex(card)] = 1
+		return options_list
+
+	def action2Card(self, input_action_number):
+		my_card = card("Green", 1)
+		if input_action_number<15:
+			my_card.color ="Blue"
+			my_card.value = input_action_number-15*0+1
+		elif input_action_number<30 and input_action_number>=15:
+			my_card.color ="Green"
+			my_card.value = input_action_number-15*1+1
+		elif input_action_number<45 and input_action_number>=30:
+			my_card.color ="Red"
+			my_card.value = input_action_number-15*2+1
+		elif input_action_number<60 and input_action_number>=45:
+			my_card.color ="Yellow"
+			my_card.value = input_action_number-15*3+1
+		return my_card
+
 	def getState(self):
 		# get Current State as bool (binary) values
 		# 15*4 card x is currently on the table				see self.cards_of_round
@@ -434,7 +502,7 @@ class game(object):
 		# sort by: (alphabet:) Blue, Green, Red, Yellow
 		# 180 Input vector!
 		state = [0]*180
-		print("inside get Current State, len(state):", len(state))
+		print("inside get Current State, len(state):", len(state), "cards of round:", self.cards_of_round)
 		for card in self.cards_of_round:
 			state[self.getCardIndex(card)]    = 1
 
