@@ -10,10 +10,10 @@ red    = (200, 0, 0)
 green  = (0, 200, 0)
 blue   = (0, 0, 200)
 yellow = (230, 230, 0)
-color_names = ["red", "green", "blue", "yellow"]
+color_names = ["Red", "Green", "Blue", "Yellow"]
 
 for p, color in enumerate([red, green, blue, yellow]):
-	for j in range(1, 15):
+	for j in range(1, 16):
 		img = Image.open(path_to_empty)
 		d = ImageDraw.Draw(img)
 		rest = ImageDraw.Draw(img)

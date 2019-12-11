@@ -140,6 +140,9 @@ class player(object):
 		# returns most upper card and removes it from the hand!
 		return self.hand.pop()
 
+	def getHandCardsSorted(self):
+		return sorted(self.hand, key = lambda x: ( x.color,  x.value))
+
 	def getOptions(self, incolor, orderOptions=0):
 		# incolor = None -> Narr was played played before
 		# incolor = None -> You can start!
