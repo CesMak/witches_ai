@@ -3,14 +3,16 @@ from queue import Queue, Empty
 import pygame
 import time
 from enum import Enum, auto
-from witches_game import card, deck, player, game
+### uncomment this line for testing!
+#from witches_game import card, deck, player, game
 
 _screenSize = _screenWidth, _screenHeight = (1300, 700)
 
 _path_to_card_imgs = "game_gui/cards"
 
 BACKGROUND = (15, 105, 25)
-WHITE = (255, 255, 255)
+WHITE      = (255, 255, 255)
+YELLOW     = (240, 240, 0)
 
 class GUI(Thread):
 
@@ -42,17 +44,32 @@ class GUI(Thread):
 		for key in (self.input_cards):
 			card = self.input_cards[key]
 			if card!= 0:
-				cardImage = gui.getCardImage(card)
+				cardImage = self.getCardImage(card)
 				imageWidth, imageHeight = cardImage.get_size()
 				x = _screenWidth // 4 + imageWidth/2*key
 				y = _screenHeight // 4 + imageWidth/2
 				self.queue.put((GUI.MessageType.SURFACE, cardImage, (x, y), card))
 
-	def removeInputCards(self):
+	def removeInputCards(self, winner_idx=0, results_=[]):
 		self.clear()
 		for i in range(4):
-			gui.dealCards(i, self.list_of_cards[i], appendCard=0)
+			self.dealCards(i, self.list_of_cards[i], appendCard=0)
 		self.input_cards   = {0: 0, 1: 0, 2: 0, 3: 0}
+		#show stats:
+		my_text = ""
+		for j, name in enumerate(self.names):
+			my_text+=str(name[0])+": "+str(results_[j])+"   "
+		self.stats_text(text=self.names[winner_idx]+" won this round|  "+my_text)
+
+	def highlight_name(self, player_name = 0):
+		if player_name == 0:
+			self.nameUp(self.names[player_name], highlight=1)
+		elif player_name == 1:
+			self.nameRight(self.names[player_name], highlight=1)
+		elif player_name == 2:
+			self.nameDown(self.names[player_name], highlight=1)
+		elif player_name == 3:
+			self.nameLeft(self.names[player_name], highlight=1)
 
 	def playCard(self, input_card, player=0):
 		# kind of a nasty hack:
@@ -62,14 +79,17 @@ class GUI(Thread):
 		self.list_of_cards[player].remove(input_card)
 
 		for i in range(4):
-			gui.dealCards(i, self.list_of_cards[i], appendCard=0)
+			self.dealCards(i, self.list_of_cards[i], appendCard=0)
 		self.input_cards[player] = input_card
 		self.putInputCards()
-		time.sleep(1)
+
+		#highlight active name:
+		self.highlight_name(player_name=player)
+
 
 	# Render cards
 	def cardLeft(self, card, nu_cards=2, index=0):
-		cardImage = gui.getCardImage(card)
+		cardImage = self.getCardImage(card)
 		imageWidth, imageHeight = cardImage.get_size()
 		x = _screenWidth // 7 - imageWidth // 2
 		y = _screenHeight // nu_cards+index*37
@@ -77,7 +97,7 @@ class GUI(Thread):
 		self.nameLeft(self.names[3])
 
 	def cardDown(self, card, nu_cards=2, index=0):
-		cardImage = gui.getCardImage(card)
+		cardImage = self.getCardImage(card)
 		imageWidth, imageHeight = cardImage.get_size()
 		x = _screenWidth // nu_cards+index*37+imageWidth  #x = _screenWidth // 2 - imageWidth // 2
 		y = (_screenHeight * 4) // 5 - imageHeight // 2
@@ -85,7 +105,7 @@ class GUI(Thread):
 		self.nameDown(self.names[2])
 
 	def cardRight(self, card, nu_cards=2, index=0):
-		cardImage = gui.getCardImage(card)
+		cardImage = self.getCardImage(card)
 		imageWidth, imageHeight = cardImage.get_size()
 		x = (_screenWidth * 4) // 4.6 - imageWidth // 2
 		y = _screenHeight // nu_cards+index*37 #y = _screenHeight // 2 - imageHeight // 2
@@ -93,7 +113,7 @@ class GUI(Thread):
 		self.nameRight(self.names[1])
 
 	def cardUp(self, card, nu_cards=2, index=0):
-		cardImage = gui.getCardImage(card)
+		cardImage = self.getCardImage(card)
 		imageWidth, imageHeight = cardImage.get_size()
 		x = _screenWidth // nu_cards+index*37+imageWidth
 		y = _screenHeight // 4 - imageHeight // 2
@@ -101,39 +121,60 @@ class GUI(Thread):
 		self.nameUp(self.names[0])
 
 	# Render names
-	def nameLeft(self, name):
+	def nameLeft(self, name,  highlight=0):
 		nameFont = pygame.font.SysFont("Comic Sans MS", 30)
-		nameSurface = nameFont.render(name, False, WHITE)
+		if highlight:
+			nameSurface = nameFont.render(name, False, YELLOW)
+		else:
+			nameSurface = nameFont.render(name, False, WHITE)
 		nameSurface = pygame.transform.rotate(nameSurface, 90)
 		surface_width, surface_height = nameSurface.get_size()
 		x = 10
 		y = _screenHeight // 2 - surface_height // 2
 		self.queue.put((GUI.MessageType.SURFACE, nameSurface, (x, y)))
 
-	def nameDown(self, name):
+	def nameDown(self, name,  highlight=0):
 		nameFont = pygame.font.SysFont("Comic Sans MS", 30)
-		nameSurface = nameFont.render(name, False, WHITE)
+		if highlight:
+			nameSurface = nameFont.render(name, False, YELLOW)
+		else:
+			nameSurface = nameFont.render(name, False, WHITE)
 		surface_width, surface_height = nameSurface.get_size()
 		x = _screenWidth // 2 - surface_width // 2
 		y = _screenHeight - surface_height - 10
 		self.queue.put((GUI.MessageType.SURFACE, nameSurface, (x, y)))
 
-	def nameRight(self, name):
+	def nameRight(self, name,  highlight=0):
 		nameFont = pygame.font.SysFont("Comic Sans MS", 30)
-		nameSurface = nameFont.render(name, False, WHITE)
+		if highlight:
+			nameSurface = nameFont.render(name, False, YELLOW)
+		else:
+			nameSurface = nameFont.render(name, False, WHITE)
 		nameSurface = pygame.transform.rotate(nameSurface, -90)
 		surface_width, surface_height = nameSurface.get_size()
 		x = _screenWidth - surface_width - 10
 		y = _screenHeight // 2 - surface_height // 2
 		self.queue.put((GUI.MessageType.SURFACE, nameSurface, (x, y)))
 
-	def nameUp(self, name):
+	def nameUp(self, name, highlight=0):
 		nameFont = pygame.font.SysFont("Comic Sans MS", 30)
-		nameSurface = nameFont.render(name, False, WHITE)
+		if highlight:
+			nameSurface = nameFont.render(name, False, YELLOW)
+		else:
+			nameSurface = nameFont.render(name, False, WHITE)
 		surface_width, surface_height = nameSurface.get_size()
 		x = _screenWidth // 2 - surface_width // 2
 		y = 10
 		self.queue.put((GUI.MessageType.SURFACE, nameSurface, (x, y)))
+
+	def stats_text(self, text="Stats here:"):
+		nameFont = pygame.font.SysFont("Comic Sans MS", 20)
+		nameSurface = nameFont.render(text, False, WHITE)
+		surface_width, surface_height = nameSurface.get_size()
+		x = _screenWidth/50
+		y = _screenHeight/50
+		self.queue.put((GUI.MessageType.SURFACE, nameSurface, (x, y)))
+
 
 	def dealCards(self, player_nu, card_list, nu_players=4, appendCard=1):
 		if not nu_players==4:
@@ -141,16 +182,16 @@ class GUI(Thread):
 			return None
 		if player_nu == 0:
 			for i, card in enumerate(card_list):
-				gui.cardUp(card, nu_cards=len(card_list), index=i)
+				self.cardUp(card, nu_cards=len(card_list), index=i)
 		elif player_nu == 1:
 			for i, card in enumerate(card_list):
-				gui.cardRight(card, nu_cards=len(card_list), index=i)
+				self.cardRight(card, nu_cards=len(card_list), index=i)
 		elif player_nu == 2:
 			for i, card in enumerate(card_list):
-				gui.cardDown(card, nu_cards=len(card_list), index=i)
+				self.cardDown(card, nu_cards=len(card_list), index=i)
 		elif player_nu == 3:
 			for i, card in enumerate(card_list):
-				gui.cardLeft(card, nu_cards=len(card_list), index=i)
+				self.cardLeft(card, nu_cards=len(card_list), index=i)
 
 		if appendCard:
 			self.list_of_cards[player_nu] = card_list
@@ -188,17 +229,19 @@ class GUI(Thread):
 
 		pygame.display.quit()
 
-if __name__ == "__main__":
-	gui = GUI()
-	gui.start() # start thread!
 
-	my_game = game(["Tim", "Bob", "Lena", "Anja"])
-	gui.names = my_game.names_player
-	for i in range(4):
-		gui.dealCards(i, my_game.players[i].getHandCardsSorted())
-
-	for j in range(10):
-		for i in range(4):
-			gui.playCard(my_game.players[i].getHandCardsSorted()[j], player=i)
-		time.sleep(1)
-		gui.removeInputCards()
+##### Uncomment following to test just the gui:
+# if __name__ == "__main__":
+# 	gui = GUI()
+# 	gui.start() # start thread!
+#
+# 	my_game = game(["Tim", "Bob", "Lena", "Anja"])
+# 	gui.names = my_game.names_player
+# 	for i in range(4):
+# 		gui.dealCards(i, my_game.players[i].getHandCardsSorted())
+#
+# 	for j in range(10):
+# 		for i in range(4):
+# 			gui.playCard(my_game.players[i].getHandCardsSorted()[j], player=i)
+# 		time.sleep(1)
+# 		gui.removeInputCards()

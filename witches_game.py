@@ -1,4 +1,6 @@
 import random
+from gui import GUI
+import time
 
 # Author Markus Lamprecht (www.simact.de) 08.12.2019
 # A card game named Witches:
@@ -234,7 +236,7 @@ class player(object):
 		self.offhand.append(stich)
 
 class game(object):
-	def __init__(self, names_player):
+	def __init__(self, names_player, use_gui=0, wait_time=2):
 		self.names_player      = names_player
 		self.nu_players        = len(self.names_player)
 		self.current_round     = 0
@@ -250,6 +252,10 @@ class game(object):
 		self.player_idx        = []   # added for AI-Gamer
 		self.start_player      = 0    # added for AI-Gamer of one round the start player
 		self.game_start_player = 0
+		self.use_gui		   = use_gui
+		if self.use_gui:
+			self.gui = GUI()
+			self.wait_time = wait_time
 		self.setup_game()
 
 	# generate a Game:
@@ -270,6 +276,13 @@ class game(object):
 			p.sayHello()
 			p.showHand()
 		print("The Deck is now:", myDeck.show(), " empty \n \n")
+
+		if self.use_gui:
+			self.gui.start() # start thread!
+
+			self.gui.names = self.names_player
+			for i in range(4):
+				self.gui.dealCards(i, self.players[i].getHandCardsSorted())
 
 	def reset_ai_game(self):
 		self.start_player      = self.nextGamePlayer()
@@ -436,6 +449,9 @@ class game(object):
 			return None
 		self.active_player = player_to_start
 		first_played_card = self.players[self.active_player].playCard(None)
+		if self.use_gui:
+			self.gui.playCard(first_played_card, player=self.active_player )
+			time.sleep(self.wait_time)
 		self.cards_of_round.append(first_played_card)
 		self.played_cards.append(first_played_card)
 		print("Player: ", self.active_player, self.names_player[self.active_player], ":\t", first_played_card, " curr result", self.players[self.active_player].countResult())
@@ -448,6 +464,9 @@ class game(object):
 				incolor = None
 			self.active_player = self.getNextPlayer()
 			curr_card = self.players[self.active_player].playCard(incolor)
+			if self.use_gui:
+				self.gui.playCard(curr_card, player=self.active_player)
+				time.sleep(self.wait_time)
 			card_before = curr_card
 			player_idx.append(self.active_player)
 			self.played_cards.append(curr_card)
@@ -460,6 +479,12 @@ class game(object):
 		self.players[next_player].appendCards(self.cards_of_round)
 		self.cards_of_round = []
 		self.current_round +=1
+		if self.use_gui:
+			results = []
+			for play in self.players:
+				results.append(play.countResult())
+			self.gui.removeInputCards(winner_idx=next_player, results_=results)
+			time.sleep(self.wait_time+1)
 		return next_player # give the player back which plays next!
 
 	def getCardIndex(self, card):

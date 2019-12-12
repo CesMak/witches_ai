@@ -10,8 +10,11 @@
 
 ## Run code:
 * necessary is >=python3.5
-* Train the agent: 'python Agent.py'
-* Play random    : 'python play_random.py'
+* Train the agent: ```python Agent.py```
+* Play random    : ```python play_random.py```
+
+## Pygame Example:
+![pygame_example](imgs/pygame.gif)
 
 ## DQN Representation
 ### Inputs:
