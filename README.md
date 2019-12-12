@@ -36,6 +36,9 @@ However [here](https://discuss.pytorch.org/t/how-to-implement-action-sampling-fo
 * respect: [evaluating the value of the state after the action with your neural network instead of the value of a action](https://ai.stackexchange.com/questions/16999/dqn-card-game-how-to-represent-the-actions)
 * Have a look into: [github_rlcards](https://github.com/datamllab/rlcard) and [this paper](https://arxiv.org/abs/1910.04376)
 * Have a look to    [uno](https://github.com/datamllab/rlcard/blob/master/examples/uno_dqn.py)
+* Have a look into Big 2 solved by PPO uses TF [here](https://github.com/henrycharlesworth/big2_PPOalgorithm)
+* Have a look into Belot solved by Policy Gradient using Pytorch [here](https://github.com/bornabesic/belot/blob/master/players/PlayerRL/policy.py)
+* Have a look into Durak A2C with Keras [here] (https://github.com/janEbert/rldurak/blob/master/thesis/rldurak.pdf)
 
 ## Stats for AI
 * Currently the train_long_memory does not work at all nevertheless, the ai player seems to learn something:
@@ -47,3 +50,46 @@ However [here](https://discuss.pytorch.org/t/how-to-implement-action-sampling-fo
 * If Player 0 has to start and plays a random card he will have a minus of -6.025 for each game
 * Not Player 0  random	-5.85 each game
 * Not Player 0  mini	    -5.80 each game
+
+
+
+## PPO Algorithm
+trying to adapt [Big2] for witches (https://github.com/henrycharlesworth/big2_PPOalgorithm)
+
+
+See Folder: **PPOAlgorithm**
+
+* *PPONetwork.py*:
+	+ Inputs:  180x1 bools: (60: Cards of ai, 60: Card has been played, 60: Card is on table)
+	+ Outputs: 60x1  bools: (0....1...0 sorted index of available actions)
+	+ ![ppo_network](imgs/network.png)
+
+* *generateGUI.py*
+	+ Generates the GUI
+
+* *witchesGame.py*:
+	+ Contains class game
+	+ each player is considered as ai player (4 neuronal networks are constructed!)
+	+ Methods:
+		- reset():
+		- fillNeuralNetworkHand(player): fills the neuronal Network Input (180x1) depending on the cards of the player
+		- updateNeuralNetworkInputs(prevHand, cPlayer): (do I need this method at all?)
+		- getPlayedCardsState(): in 0....1 of played cards
+		- getTableState():       in 0....1 of cards currently on table
+		- updateGame()
+		- assignRewards(): assigns the rewards self.rewards to each player !
+		- step()
+		- returnAvailableActions() -> getHandActions(card_list)
+		- getCurrentState(): construct with getPlayedCardsState, getTableState, getOnHandState()
+
+* *gameLogic.py*
+	+ Contains class card
+	+ Contains class deck
+		- shuffle()
+	+ Contains class player:
+		- getHandOptions() -> get the actions of a player in cards
+		- getHandActions(card_list) -> get the sorted actions of a player in 0....1 (60x1)
+		- getOnHandState() -> get the state in 0...1 of the cards on hand of one player
+		- optional: getOffHandState() -> get the state in 0...1 of the played cards of one player
+		- playCard(): ?!
+		- randomOption(): gets a random option of the current cards
