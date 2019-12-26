@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import math
 
 # Author Markus Lamprecht (www.simact.de) 08.12.2019
 # A card game named Witches:
@@ -418,11 +419,17 @@ class game(object):
 
 	def convertAvailableActions(self, availAcs):
 		#convert from (1,0,0,1,1...) to (0, -math.inf, -math.inf, 0,0...) etc
-		availAcs[np.nonzero(availAcs==0)] = -math.inf
-		availAcs[np.nonzero(availAcs==1)] = 0
-		return availAcs
+		#availAcs = np.asarray(availAcs)
+		for j, i in enumerate(availAcs):
+			if i == 1:
+				availAcs[j]=0
+			if i == 0:
+				availAcs[j]=-math.inf
+		# availAcs[np.nonzero(availAcs==0)] = -math.inf
+		# availAcs[np.nonzero(availAcs==1)] = 0
+		return np.asarray(availAcs)
 
-	def getState():
+	def getState(self):
 		#    return self.playersGo, self.neuralNetworkInputs[self.playersGo].reshape(1,412), convertAvailableActions(self.returnAvailableActions()).reshape(1,1695)
 		# return active_player, neuronNetworkInputs of active player and available actions of active player
 		play_options = self.players[self.active_player].getBinaryOptions(self.getInColor())
@@ -452,8 +459,15 @@ class game(object):
 		#inputs: player_idx index of the player to play  a card
 		#action_idx BGRY 0...1....0...1 of the card to be played!
 		#returns: reward, done, info
+		if type(action_list) is list:
+			action_idx = action_list.index(1)
+		else:
+			action_idx = action_list
 
-		action_idx = action_list.index(1)
+		info = {}
+		#info['numTurns'] = self.goCounter
+		#info['rewards'] = self.rewards
+
 		#0. check if gameOver
 		if self.gameOver:
 			print(">>>Is already game over! Reset Game now")
@@ -477,6 +491,8 @@ class game(object):
 			self.rewards = np.zeros((self.nu_players,))
 			self.rewards[player_win_idx]  =  self.players[player_win_idx].countResult([self.on_table_cards])
 			print(">>>"+ str(winning_card)+", "+str(self.names_player[player_win_idx])+" ("+str(player_win_idx)+") wins this round ["+str(self.current_round)+"/"+str(self.total_rounds)+"] rewards:", self.rewards,"\n")
+			info['numTurns'] = self.total_rounds
+			info['rewards'] = self.rewards
 			self.on_table_cards = []
 			self.active_player  = player_win_idx
 			#if this player wins! do not call next player cause this player has to start next Round!
@@ -488,6 +504,8 @@ class game(object):
 		for i in range(self.nu_players):
 			self.neuralNetworkInputs[i] = np.asarray(self.getCurrentPlayerState(i), dtype=int)
 
+
+		self.getState()
 		return self.rewards, self.gameOver, "info here"
 
 	def play_one_round(self, nu_rounds=3):
@@ -522,7 +540,11 @@ class game(object):
 
 
 
-
+####################################
+#
 #Testing
-game = game(["Tim", "Bob", "Lena", "Anja"])
-game.play_one_round()
+#
+####################################
+
+# game = game(["Tim", "Bob", "Lena", "Anja"])
+# game.play_one_round()

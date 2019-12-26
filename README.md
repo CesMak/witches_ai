@@ -56,6 +56,11 @@ However [here](https://discuss.pytorch.org/t/how-to-implement-action-sampling-fo
 ## PPO Algorithm
 trying to adapt [Big2] for witches (https://github.com/henrycharlesworth/big2_PPOalgorithm)
 
+use python 3.5.2, tf, stable-baselines(pip install stable-baselines)
+baselines is not used cause of mujo license!
+
+Start with:
+python mainBig2PPOSimulation.py (using python Python 3.5.2)
 
 See Folder: **PPO**
 
@@ -65,11 +70,11 @@ See Folder: **PPO**
 	+ ![ppo_network](imgs/network.png)
 
 * *generateGUI.py*
-	+ Generates the GUI
+	+ (TODO) Generates the GUI
 
 * *gameClasses.py*
-	+ Contains class card
-	+ Contains class deck
+	+ Contains class **card**
+	+ Contains class **deck**
 		- shuffle()
 	+ Contains class **player**:
 		- getOptions() -> get the actions of a player in cards sorted as BGRY

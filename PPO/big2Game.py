@@ -7,18 +7,21 @@ from multiprocessing import Process, Pipe
 #now create a vectorized environment
 def worker(remote, parent_remote):
 	parent_remote.close()
-	game = game(["Tim", "Bob", "Lena", "Anja"])
+	my_game = game(["Tim", "Bob", "Lena", "Anja"])
 	while True:
 		cmd, data = remote.recv()
 		if cmd == 'step':
-			reward, done, info = game.step(data)
+			#print("Hallo worker:, data:\n\n\n", data)
+			#data is just a number!
+			reward, done, info = my_game.step(data)
 			remote.send((reward, done, info))
 		elif cmd == 'reset':
-			game.reset()
-			pGo, cState, availAcs = game.getCurrentState()
+			my_game.reset()
+			pGo, cState, availAcs = my_game.getState()
 			remote.send((pGo, cState))
 		elif cmd == 'getCurrState':
-			pGo, cState, availAcs = game.getCurrentState()
+			pGo, cState, availAcs = my_game.getState() # in here!
+			#print("in getCurrState:", availAcs, cState)
 			remote.send((pGo, cState, availAcs))
 		elif cmd == 'close':
 			remote.close()
