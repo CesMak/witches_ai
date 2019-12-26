@@ -19,7 +19,7 @@ def sf01(arr):
 
 class big2PPOSimulation(object):
 
-	def __init__(self, sess, *, inpDim = 180, nGames = 8, nSteps = 15, nMiniBatches = 4, nOptEpochs = 5, lam = 0.95, gamma = 0.995, ent_coef = 0.01, vf_coef = 0.5, max_grad_norm = 0.5, minLearningRate = 0.000001, learningRate, clipRange, saveEvery = 500):
+	def __init__(self, sess, *, inpDim = 180, nGames = 8, nSteps = 15, nMiniBatches = 4, nOptEpochs = 5, lam = 0.95, gamma = 0.995, ent_coef = 0.01, vf_coef = 0.5, max_grad_norm = 0.5, minLearningRate = 0.000001, learningRate, clipRange, saveEvery = 50):
 
 		#network/model for training
 		self.trainingNetwork = PPONetwork(sess, inpDim, 60, "trainNet")
@@ -116,10 +116,8 @@ class big2PPOSimulation(object):
 					mb_dones[-4][i] = True
 					self.epInfos.append(infos[i])
 					self.gamesDone += 1
-					print("Games Done:", self.gamesDone)
-					#print(infos)
-					#print("\n\n\n")
-					#print("Game %d finished. Lasted %d turns" % (self.gamesDone, infos[i]['numTurns']))
+					#print("Games Done:", self.gamesDone, "Rewards:", reward)
+
 		self.prevObs = mb_obs[endLength:]
 		self.prevGos = mb_pGos[endLength:]
 		self.prevRewards = mb_rewards[endLength:]
@@ -193,6 +191,7 @@ class big2PPOSimulation(object):
 			if needToReset == 1:
 				self.trainingNetwork.loadParams(currParams)
 
+			print(update, self.saveEvery, update % self.saveEvery)
 			if update % self.saveEvery == 0:
 				name = "modelParameters" + str(update)
 				self.trainingNetwork.saveParams(name)

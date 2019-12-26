@@ -332,7 +332,7 @@ class game(object):
 		for p in self.players:
 			p.sayHello()
 			p.showHand()
-		print("The Deck is now:", myDeck.show(), " empty \n \n")
+		#print("The Deck is now:", myDeck.show(), " empty \n \n")
 
 		# fill neuronal network inputs:
 		for i in range(self.nu_players):
@@ -342,17 +342,23 @@ class game(object):
 		#not used yet.
 		myDeck = deck()
 		myDeck.shuffle()
+		info = {}
 		self.rewards = np.zeros((self.nu_players,))
 		self.nu_games_played +=1
 		for player in self.players:
 			player.total_result +=player.countResult(player.offhand)
-			print(">>>Total of", player.name,"is", player.total_result, " last game:", player.countResult(player.offhand))
+			#print(">>>Total of", player.name,"is", player.total_result, " last game:", player.countResult(player.offhand))
+			info[str(player.name)+"_total_result"] = player.total_result
+			info[str(player.name)+"_last_game___"] = player.countResult(player.offhand)
 			player.draw(myDeck, self.total_rounds)
 			player.offhand = []
 			self.gameOver = 0
 			self.current_round = 0
-		print(">>>Played games:"+str(self.nu_games_played)+"\n\n")
+
+		#print(">>>Played games:"+str(self.nu_games_played)+"\n\n")
+		info["played_games"] = self.nu_games_played
 		self.played_cards  = []
+		return info
 
 	def getInColor(self):
 		# returns the leading color of the on_table_cards
@@ -464,19 +470,15 @@ class game(object):
 		else:
 			action_idx = action_list
 
-		info = {}
-		#info['numTurns'] = self.goCounter
-		#info['rewards'] = self.rewards
-
 		#0. check if gameOver
 		if self.gameOver:
-			print(">>>Is already game over! Reset Game now")
-			self.reset_game()
-			return self.rewards, self.gameOver, "info"
+			#print(">>>Is already game over! Reset Game now")
+			info = self.reset_game()
+			return self.rewards, self.gameOver, info
 
 		#1. just play the card:
 		played_card = self.players[self.active_player].playBinaryCardIndex(action_idx)
-		print(self.names_player[self.active_player],"plays random option: ", played_card,"action idx:", action_idx, "player:", self.active_player)
+		#print(self.names_player[self.active_player],"plays random option: ", played_card,"action idx:", action_idx, "player:", self.active_player)
 		self.played_cards.append(played_card)
 		self.on_table_cards.append(played_card)
 
@@ -490,9 +492,7 @@ class game(object):
 			# assign rewards
 			self.rewards = np.zeros((self.nu_players,))
 			self.rewards[player_win_idx]  =  self.players[player_win_idx].countResult([self.on_table_cards])
-			print(">>>"+ str(winning_card)+", "+str(self.names_player[player_win_idx])+" ("+str(player_win_idx)+") wins this round ["+str(self.current_round)+"/"+str(self.total_rounds)+"] rewards:", self.rewards,"\n")
-			info['numTurns'] = self.total_rounds
-			info['rewards'] = self.rewards
+			#print(">>>"+ str(winning_card)+", "+str(self.names_player[player_win_idx])+" ("+str(player_win_idx)+") wins this round ["+str(self.current_round)+"/"+str(self.total_rounds)+"] rewards:", self.rewards,"\n")
 			self.on_table_cards = []
 			self.active_player  = player_win_idx
 			#if this player wins! do not call next player cause this player has to start next Round!
@@ -504,9 +504,7 @@ class game(object):
 		for i in range(self.nu_players):
 			self.neuralNetworkInputs[i] = np.asarray(self.getCurrentPlayerState(i), dtype=int)
 
-
-		self.getState()
-		return self.rewards, self.gameOver, "info here"
+		return self.rewards, self.gameOver, {} #<-return info here!
 
 	def play_one_round(self, nu_rounds=3):
 		#plays multiple rounds in steps!
@@ -519,12 +517,12 @@ class game(object):
 	def play_one_game(self, start_player=0):
 		j = 0
 		for i in range(0, self.total_rounds*self.nu_players):
-			print("\nRound", i, "Player to start:", j)
+			#print("\nRound", i, "Player to start:", j)
 			j = self.play_round(player_to_start=j)
 
-		print("\nGame finished with:")
-		for player in self.players:
-			print(player.name, "Hand:", player.hand, "Result:", player.countResult(), "\noffHand:", player.offhand, "\n\n")
+		# print("\nGame finished with:")
+		# for player in self.players:
+		# 	print(player.name, "Hand:", player.hand, "Result:", player.countResult(), "\noffHand:", player.offhand, "\n\n")
 
 		return self.getNextPlayer()
 
