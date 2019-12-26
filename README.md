@@ -57,7 +57,7 @@ However [here](https://discuss.pytorch.org/t/how-to-implement-action-sampling-fo
 trying to adapt [Big2] for witches (https://github.com/henrycharlesworth/big2_PPOalgorithm)
 
 
-See Folder: **PPOAlgorithm**
+See Folder: **PPO**
 
 * *PPONetwork.py*:
 	+ Inputs:  180x1 bools: (60: Cards of ai, 60: Card has been played, 60: Card is on table)
@@ -67,29 +67,33 @@ See Folder: **PPOAlgorithm**
 * *generateGUI.py*
 	+ Generates the GUI
 
-* *witchesGame.py*:
-	+ Contains class game
-	+ each player is considered as ai player (4 neuronal networks are constructed!)
-	+ Methods:
-		- reset():
-		- fillNeuralNetworkHand(player): fills the neuronal Network Input (180x1) depending on the cards of the player
-		- updateNeuralNetworkInputs(prevHand, cPlayer): (do I need this method at all?)
-		- getPlayedCardsState(): in 0....1 of played cards
-		- getTableState():       in 0....1 of cards currently on table
-		- updateGame()
-		- assignRewards(): assigns the rewards self.rewards to each player !
-		- step()
-		- returnAvailableActions() -> getHandActions(card_list)
-		- getCurrentState(): construct with getPlayedCardsState, getTableState, getOnHandState()
-
-* *gameLogic.py*
+* *gameClasses.py*
 	+ Contains class card
 	+ Contains class deck
 		- shuffle()
-	+ Contains class player:
-		- getHandOptions() -> get the actions of a player in cards
-		- getHandActions(card_list) -> get the sorted actions of a player in 0....1 (60x1)
-		- getOnHandState() -> get the state in 0...1 of the cards on hand of one player
+	+ Contains class **player**:
+		- getOptions() -> get the actions of a player in cards sorted as BGRY
+		- getBinaryOptions(incolor) -> get the sorted actions of this player in 0....1 (60x1), if incolor==None a joker was played before! if incolor==Color you have limited options! (except you have a joker)
+		- getBinaryHand() -> get the state in 0...1 of the cards on hand of this player
 		- optional: getOffHandState() -> get the state in 0...1 of the played cards of one player
-		- playCard(): ?!
-		- randomOption(): gets a random option of the current cards
+		- playBinaryCardIndex(idx): input the index of the card you want to play!
+		- playRandomCard(incolor):  plays a random card that is possible!
+	+ Contains class **game**
+		+ each player is considered as ai player (4 neuronal networks are constructed!)
+		+ Methods:
+			- getCurrentState(playeridx): construct with getPlayedCardsState, getTableState, getOnHandState()
+			- getCardIndex()
+			- step(player_idx, action_idx)
+			- evaluateWinner() # uses on_table_cards to evaluate the winner
+			- getInColor()    # returns the leading color, if 4 joker played, none is returned.
+			- getPreviousPlayer() # returns prev player
+			- getNextPlayer(): # returns the index of the next player and sets the active player to the nextPlayer
+			- assignRewards(winner_idx)
+			- getState() #return active player, nn of active player and actions of active player
+			- reset():
+			- fillNeuralNetworkHand(player): fills the neuronal Network Input (180x1) depending on the cards of the player
+			- updateNeuralNetworkInputs(prevHand, cPlayer): (do I need this method at all?)
+			- updateGame()
+			- assignRewards(): assigns the rewards self.rewards to each player !
+			- step()
+			- returnAvailableActions() -> getHandActions(card_list)
