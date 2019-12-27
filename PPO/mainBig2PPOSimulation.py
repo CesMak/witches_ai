@@ -15,11 +15,15 @@ def sf01(arr):
 	s = arr.shape
 	return arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:])
 
-
-
 class big2PPOSimulation(object):
 
-	def __init__(self, sess, *, inpDim = 180, nGames = 8, nSteps = 15, nMiniBatches = 4, nOptEpochs = 5, lam = 0.95, gamma = 0.995, ent_coef = 0.01, vf_coef = 0.5, max_grad_norm = 0.5, minLearningRate = 0.000001, learningRate, clipRange, saveEvery = 50):
+	def __init__(self, sess, *, inpDim = 180, nGames = 8, nSteps = 15, nMiniBatches = 4, nOptEpochs = 5, lam = 0.95, gamma = 0.995, ent_coef = 0.01, vf_coef = 0.5, max_grad_norm = 0.5, minLearningRate = 0.000001, learningRate, clipRange, saveEvery = 10):
+		"""
+		nGames:		number of seperate Games played (in parallel)
+		nSteps:		each game is executed for nSteps Time Steps (how long one game endures?)
+		advantage estimates are made training then occurs for K epochs
+		M= Mini Batch size
+		"""
 
 		#network/model for training
 		self.trainingNetwork = PPONetwork(sess, inpDim, 60, "trainNet")
@@ -30,7 +34,7 @@ class big2PPOSimulation(object):
 
 		#for now each player uses the same (up to date) network to make it's decisions.
 		self.playerNetworks[1] = self.playerNetworks[2] = self.playerNetworks[3] = self.playerNetworks[4] = self.trainingNetwork
-		self.trainOnPlayer = [True, True, False, True]# Lena should loose
+		self.trainOnPlayer = [True, True, True, True]# Lena should loose
 
 		tf.global_variables_initializer().run(session=sess)
 
@@ -50,7 +54,7 @@ class big2PPOSimulation(object):
 		self.clipRange = clipRange
 		self.saveEvery = saveEvery
 
-		self.rewardNormalization = 5.0 #was 5.0 before!!! --- TODO? --- divide rewards by this number (so reward ranges from -1.0 to 3.0)
+		self.rewardNormalization = 1.0 #was 5.0 before!!! --- TODO? --- divide rewards by this number (so reward ranges from -1.0 to 3.0)
 
 		#test networks - keep network saved periodically and run test games against current network
 		self.testNetworks = {}
@@ -181,7 +185,9 @@ class big2PPOSimulation(object):
 				for start in range(0, batchSize, nTrainingBatch):
 					end = start + nTrainingBatch
 					mb_inds = inds[start:end]
-					mb_lossvals.append(self.trainingModel.train(lrnow, cliprangenow, states[mb_inds], availAcs[mb_inds], returns[mb_inds], actions[mb_inds], values[mb_inds], neglogpacs[mb_inds]))
+					loss_   = self.trainingModel.train(lrnow, cliprangenow, states[mb_inds], availAcs[mb_inds], returns[mb_inds], actions[mb_inds], values[mb_inds], neglogpacs[mb_inds])
+					mb_lossvals.append(loss_)
+					print("Loss:", loss_)
 			lossvals = np.mean(mb_lossvals, axis=0)
 			self.losses.append(lossvals)
 
@@ -189,6 +195,7 @@ class big2PPOSimulation(object):
 			needToReset = 0
 			for param in newParams:
 				if np.sum(np.isnan(param)) > 0:
+					print("I need to reset! as nan values are contained!!!")
 					needToReset = 1
 
 			if needToReset == 1:
@@ -199,7 +206,6 @@ class big2PPOSimulation(object):
 				name = "modelParameters" + str(update)
 				self.trainingNetwork.saveParams(name)
 				print("Losses:", self.losses, "\n\n")
-				#print("Infos", self.epInfos,"\n\n")
 				joblib.dump(self.losses,  "losses.pkl")
 				joblib.dump(self.epInfos, "epInfos.pkl")
 
