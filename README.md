@@ -77,7 +77,6 @@ See Folder: **PPO**
 * *PPONetwork.py*:
 	+ Inputs:  180x1 bools: (60: Cards of ai, 60: Card has been played, 60: Card is on table)
 	+ Outputs: 60x1  bools: (0....1...0 sorted index of available actions)
-	+
 	[ppo_network](imgs/network.png)
 
 * *generateGUI.py*
