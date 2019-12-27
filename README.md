@@ -27,17 +27,19 @@ As binary (a vector of 180 bool)
 **Outputs**
 * 60x1 action 0.01, 0.04,.... probability of suggested actions
 
-## PPO Algorithm
+# PPO Algorithm
 trying to adapt [Big2](https://github.com/henrycharlesworth/big2_PPOalgorithm) for witches.
 
 use python 3.5.2, tf, stable-baselines(pip install stable-baselines)
 baselines is not used cause of mujo license!
 
 Start with:
-python mainBig2PPOSimulation.py (using python Python 3.5.2)
+```
+python mainBig2PPOSimulation.py #(using python Python 3.5.2)
+```
 
 ## Last achievements
-* 27.12.2019 training now running but is not learning anything](https://github.com/henrycharlesworth/big2_PPOalgorithm/issues/8)
+* 27.12.2019 training now running but [is not learning anything](https://github.com/henrycharlesworth/big2_PPOalgorithm/issues/8)
 * What is saved?:
 	```
 	loaded_model = joblib.load("modelParameters400")
@@ -62,12 +64,12 @@ python mainBig2PPOSimulation.py (using python Python 3.5.2)
 	+ problem NAN: Check if loss is a number(self.losses) -> NO
 	+ problem NAN: Check if all network params are not NAN! -> No params are NAN
 
-* Read in the paper about the Loss:
-* (what is it here? why 3 numbers?)
-* why at the beginning still number and then not anymore?
+* Read the [paper](https://arxiv.org/pdf/1808.10442) about the Loss:
+	* (what is it here? why 3 numbers?)
+	* why at the beginning still number and then not anymore?
 
 * Check generateGUI.py to see how the network is used
-* How parameters are read in etc.
+	* How parameters are read in etc.
 
 ## Classes
 See Folder: **PPO**
