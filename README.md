@@ -54,7 +54,7 @@ However [here](https://discuss.pytorch.org/t/how-to-implement-action-sampling-fo
 
 
 ## PPO Algorithm
-trying to adapt [Big2] for witches (https://github.com/henrycharlesworth/big2_PPOalgorithm)
+trying to adapt [Big2](https://github.com/henrycharlesworth/big2_PPOalgorithm) for witches.
 
 use python 3.5.2, tf, stable-baselines(pip install stable-baselines)
 baselines is not used cause of mujo license!
@@ -62,12 +62,47 @@ baselines is not used cause of mujo license!
 Start with:
 python mainBig2PPOSimulation.py (using python Python 3.5.2)
 
+### Last achievements
+* 27.12.2019 training now running but is it working](https://github.com/henrycharlesworth/big2_PPOalgorithm/issues/8)
+* What is saved?:
+	```
+	loaded_model = joblib.load("modelParameters400")
+	for i in loaded_model: print(i.size, type(i), i.shape)
+	```
+
+	* input layer : 92160 <class 'numpy.ndarray'> (180, 512)  
+	* hidden layer: 512 <class 'numpy.ndarray'> (512,)
+	* hidden layer: 131072 <class 'numpy.ndarray'> (512, 256)
+	* hidden top  : 256 <class 'numpy.ndarray'> (256,)
+	* hidden dense: 15360 <class 'numpy.ndarray'> (256, 60)
+	* Prob actions: 60 <class 'numpy.ndarray'> (60,)
+	* Below Path in layers:
+	* hidden layer: 131072 <class 'numpy.ndarray'> (512, 256)
+	* hidden layer: 256 <class 'numpy.ndarray'> (256,)
+	* hidden layer: 256 <class 'numpy.ndarray'> (256, 1)
+	* estimated output value: 1 <class 'numpy.ndarray'> (1,)
+
+* See if something is learned:
+	+ ```		self.trainOnPlayer = [True, True, False, True]```
+	+ see evaluate.py file (it seems that nothing is learned!)
+	+ problem NAN: Check if loss is a number(self.losses) -> NO
+	+ problem NAN: Check if all network params are not NAN! -> No params are NAN
+
+* Read in the paper about the Loss:
+* (what is it here? why 3 numbers?)
+* why at the beginning still number and then not anymore?
+
+* Check generateGUI.py to see how the network is used
+* How parameters are read in etc.
+
+### Classes
 See Folder: **PPO**
 
 * *PPONetwork.py*:
 	+ Inputs:  180x1 bools: (60: Cards of ai, 60: Card has been played, 60: Card is on table)
 	+ Outputs: 60x1  bools: (0....1...0 sorted index of available actions)
-	+ ![ppo_network](imgs/network.png)
+	+
+	[ppo_network](imgs/network.png)
 
 * *generateGUI.py*
 	+ (TODO) Generates the GUI

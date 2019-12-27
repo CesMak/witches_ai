@@ -2,3 +2,4 @@ history*
 __pycache__/
 PPO/modelParameters0
 *.pkl
+modelParameters*

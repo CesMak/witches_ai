@@ -348,15 +348,15 @@ class game(object):
 		for player in self.players:
 			player.total_result +=player.countResult(player.offhand)
 			#print(">>>Total of", player.name,"is", player.total_result, " last game:", player.countResult(player.offhand))
-			info[str(player.name)+"_total_result"] = player.total_result
-			info[str(player.name)+"_last_game___"] = player.countResult(player.offhand)
+			info[str(player.name)[0]+"_tr"] = player.total_result
+			info[str(player.name)[0]+"_lg"] = player.countResult(player.offhand)
 			player.draw(myDeck, self.total_rounds)
 			player.offhand = []
 			self.gameOver = 0
 			self.current_round = 0
 
 		#print(">>>Played games:"+str(self.nu_games_played)+"\n\n")
-		info["played_games"] = self.nu_games_played
+		info["pg"] = self.nu_games_played
 		self.played_cards  = []
 		return info
 

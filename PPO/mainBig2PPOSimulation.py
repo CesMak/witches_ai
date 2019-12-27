@@ -30,7 +30,7 @@ class big2PPOSimulation(object):
 
 		#for now each player uses the same (up to date) network to make it's decisions.
 		self.playerNetworks[1] = self.playerNetworks[2] = self.playerNetworks[3] = self.playerNetworks[4] = self.trainingNetwork
-		self.trainOnPlayer = [True, True, True, True]
+		self.trainOnPlayer = [True, True, False, True]# Lena should loose
 
 		tf.global_variables_initializer().run(session=sess)
 
@@ -50,7 +50,7 @@ class big2PPOSimulation(object):
 		self.clipRange = clipRange
 		self.saveEvery = saveEvery
 
-		self.rewardNormalization = 1.0 #was 5.0 before!!! --- TODO? --- divide rewards by this number (so reward ranges from -1.0 to 3.0)
+		self.rewardNormalization = 5.0 #was 5.0 before!!! --- TODO? --- divide rewards by this number (so reward ranges from -1.0 to 3.0)
 
 		#test networks - keep network saved periodically and run test games against current network
 		self.testNetworks = {}
@@ -94,6 +94,7 @@ class big2PPOSimulation(object):
 			currGos = np.squeeze(currGos)
 			actions, values, neglogpacs = self.trainingNetwork.step(currStates, currAvailAcs)
 			rewards, dones, infos = self.vectorizedGame.step(actions)
+			infos = [t for t in infos if t]# delete empty entrys
 			mb_obs.append(currStates.copy())
 			mb_pGos.append(currGos)
 			mb_availAcs.append(currAvailAcs.copy())
@@ -114,9 +115,11 @@ class big2PPOSimulation(object):
 					mb_dones[-2][i] = True
 					mb_dones[-3][i] = True
 					mb_dones[-4][i] = True
-					self.epInfos.append(infos[i])
 					self.gamesDone += 1
 					#print("Games Done:", self.gamesDone, "Rewards:", reward)
+
+			if len(infos)>0:
+				self.epInfos.append(infos)# appends too much?
 
 		self.prevObs = mb_obs[endLength:]
 		self.prevGos = mb_pGos[endLength:]
@@ -196,7 +199,7 @@ class big2PPOSimulation(object):
 				name = "modelParameters" + str(update)
 				self.trainingNetwork.saveParams(name)
 				print("Losses:", self.losses, "\n\n")
-				print("Infos", self.epInfos,"\n\n")
+				#print("Infos", self.epInfos,"\n\n")
 				joblib.dump(self.losses,  "losses.pkl")
 				joblib.dump(self.epInfos, "epInfos.pkl")
 
