@@ -91,13 +91,29 @@ class big2PPOSimulation(object):
 			endLength = self.nSteps
 		else:
 			endLength = self.nSteps-4
-		for _ in range(self.nSteps):
+
+		# steps: indicate every move of one player!
+		for i in range(self.nSteps):#8 steps.
+			# for 2 parallel games:
+			# currGos      = [0 0] -> array of active player
+			# currStates   = [[[0...1]] [[0...1]]] -> avail. Cards
+			# currAvailAcs = [[[inf...0]] [[inf...0]]] -> curr AvailAcs
+			# actions      = [6 10]  -> idx of action to play?
+			# values       = [0.19484621 0.23115599]
+			# neglogpacs   = [2.5639274 2.6337652]
+			# rewards      =  (array([0., 0., 0., 0.]), array([ 0., -6.,  0.,  0.]))
+			# dones        =  (False, False)
+			# self.nGames  =  2
+			# mb_rewards   -> len(mb_rewards) 5....12, 5....12,...
+			# mb_pGos is the active player.
+
 			currGos, currStates, currAvailAcs = self.vectorizedGame.getCurrStates()
 			currStates = np.squeeze(currStates)
 			currAvailAcs = np.squeeze(currAvailAcs)
 			currGos = np.squeeze(currGos)
 			actions, values, neglogpacs = self.trainingNetwork.step(currStates, currAvailAcs)
 			rewards, dones, infos = self.vectorizedGame.step(actions)
+			print("Step:", i, "in run:", mb_pGos)
 			infos = [t for t in infos if t]# delete empty entrys
 			mb_obs.append(currStates.copy())
 			mb_pGos.append(currGos)
@@ -107,24 +123,34 @@ class big2PPOSimulation(object):
 			mb_neglogpacs.append(neglogpacs)
 			mb_dones.append(list(dones))
 			#now back assign rewards if state is terminal
+
+			# assign rewards correctly:
+			# alle 4 Schritte da dann immer eine Runde zu Ende ist.
+
 			toAppendRewards = np.zeros((self.nGames,))
-			mb_rewards.append(toAppendRewards)
+			#mb_rewards.append(list(rewards))
+			mb_rewards.append(toAppendRewards)#toAppendRewards
 			for i in range(self.nGames):
-				if dones[i] == True:
+				try:
 					reward = rewards[i]
 					mb_rewards[-1][i] = reward[mb_pGos[-1][i]-1] / self.rewardNormalization
+					print("rewards:", mb_rewards[-1][i], "curr_play", mb_pGos[-1][i]-1, "zuordn", reward[mb_pGos[-1][i]-1])
 					mb_rewards[-2][i] = reward[mb_pGos[-2][i]-1] / self.rewardNormalization
 					mb_rewards[-3][i] = reward[mb_pGos[-3][i]-1] / self.rewardNormalization
 					mb_rewards[-4][i] = reward[mb_pGos[-4][i]-1] / self.rewardNormalization
+				except Exception as e:
+					print("excpetion not possible len issues")
+					print(e)
+				if dones[i] == True:
+					#do not append rewards if game is done!
+
 					mb_dones[-2][i] = True
 					mb_dones[-3][i] = True
 					mb_dones[-4][i] = True
 					self.gamesDone += 1
 					#print("Games Done:", self.gamesDone, "Rewards:", reward)
-
 			if len(infos)>0:
 				self.epInfos.append(infos)# appends too much?
-
 		self.prevObs = mb_obs[endLength:]
 		self.prevGos = mb_pGos[endLength:]
 		self.prevRewards = mb_rewards[endLength:]
@@ -133,11 +159,13 @@ class big2PPOSimulation(object):
 		self.prevDones = mb_dones[endLength:]
 		self.prevNeglogpacs = mb_neglogpacs[endLength:]
 		self.prevAvailAcs = mb_availAcs[endLength:]
-		mb_obs = np.asarray(mb_obs, dtype=np.float32)[:endLength]
+		mb_obs      = np.asarray(mb_obs, dtype=np.float32)[:endLength]
 		mb_availAcs = np.asarray(mb_availAcs, dtype=np.float32)[:endLength]
-		mb_rewards = np.asarray(mb_rewards, dtype=np.float32)[:endLength]
-		mb_actions = np.asarray(mb_actions, dtype=np.float32)[:endLength]
-		mb_values = np.asarray(mb_values, dtype=np.float32)
+		mb_rewards  = np.asarray(mb_rewards, dtype=np.float32)[:endLength]
+
+		# mb_rewards = [ [0 0], ...], len(mb_rewards) = 8 = nSteps
+		mb_actions  = np.asarray(mb_actions, dtype=np.float32)[:endLength]
+		mb_values   = np.asarray(mb_values, dtype=np.float32)
 		mb_neglogpacs = np.asarray(mb_neglogpacs, dtype=np.float32)[:endLength]
 		mb_dones = np.asarray(mb_dones, dtype=np.bool)
 		#discount/bootstrap value function with generalized advantage estimation:
@@ -146,6 +174,7 @@ class big2PPOSimulation(object):
 		for k in range(4):
 			lastgaelam = 0
 			for t in reversed(range(k, endLength, 4)):
+				# t=0, 1, 2, 3, 4, 0, 5, 1, 6, 2, 7, 3
 				nextNonTerminal = 1.0 - mb_dones[t]
 				nextValues = mb_values[t+4]
 				delta = mb_rewards[t] + self.gamma * nextValues * nextNonTerminal - mb_values[t]
@@ -159,7 +188,7 @@ class big2PPOSimulation(object):
 
 	def train(self, nTotalSteps):
 
-		nUpdates = nTotalSteps // (self.nGames * self.nSteps)
+		nUpdates = nTotalSteps // (self.nGames * self.nSteps)#62500000
 
 		for update in range(nUpdates):
 
@@ -169,6 +198,7 @@ class big2PPOSimulation(object):
 				lrnow = self.minLearningRate
 			cliprangenow = self.clipRange * alpha
 
+			#1. run -> go into step see in run function
 			states, availAcs, returns, actions, values, neglogpacs = self.run()
 
 			batchSize = states.shape[0]
@@ -187,7 +217,7 @@ class big2PPOSimulation(object):
 					mb_inds = inds[start:end]
 					loss_   = self.trainingModel.train(lrnow, cliprangenow, states[mb_inds], availAcs[mb_inds], returns[mb_inds], actions[mb_inds], values[mb_inds], neglogpacs[mb_inds])
 					mb_lossvals.append(loss_)
-					print("Loss:", loss_)
+					print("Loss:", loss_, "start", start, "bS", batchSize, "nB", nTrainingBatch)
 			lossvals = np.mean(mb_lossvals, axis=0)
 			self.losses.append(lossvals)
 
@@ -196,6 +226,7 @@ class big2PPOSimulation(object):
 			for param in newParams:
 				if np.sum(np.isnan(param)) > 0:
 					print("I need to reset! as nan values are contained!!!")
+					halo
 					needToReset = 1
 
 			if needToReset == 1:
@@ -213,7 +244,7 @@ class big2PPOSimulation(object):
 if __name__ == "__main__":
 	import time
 	with tf.Session() as sess:
-		mainSim = big2PPOSimulation(sess, nGames=64, nSteps=15, learningRate = 0.00025, clipRange = 0.2)
+		mainSim = big2PPOSimulation(sess, nGames=2, nSteps=8, learningRate = 0.00025, clipRange = 0.2)
 		start = time.time()
 		mainSim.train(1000000000)  # 1000000000
 		end = time.time()

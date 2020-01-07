@@ -343,21 +343,27 @@ class game(object):
 		myDeck = deck()
 		myDeck.shuffle()
 		info = {}
-		self.rewards = np.zeros((self.nu_players,))
 		self.nu_games_played +=1
 		for player in self.players:
 			player.total_result +=player.countResult(player.offhand)
-			#print(">>>Total of", player.name,"is", player.total_result, " last game:", player.countResult(player.offhand))
+			print(">>>Total of", player.name,"is", player.total_result, "last game:", player.countResult(player.offhand))
 			info[str(player.name)[0]+"_tr"] = player.total_result
 			info[str(player.name)[0]+"_lg"] = player.countResult(player.offhand)
 			player.draw(myDeck, self.total_rounds)
-			player.offhand = []
-			self.gameOver = 0
-			self.current_round = 0
+			player.offhand         = []
+
+		self.active_player     =  0 # Tim always starts!
+		self.on_table_cards    = []
+		self.gameOver          = 0
+		self.current_round     = 0
+		self.played_cards     = []
+
+		# fill neuronal network inputs:
+		for i in range(self.nu_players):
+			self.neuralNetworkInputs[i] = np.asarray(self.getCurrentPlayerState(i), dtype=int)
 
 		#print(">>>Played games:"+str(self.nu_games_played)+"\n\n")
 		info["pg"] = self.nu_games_played
-		self.played_cards  = []
 		return info
 
 	def getInColor(self):
@@ -459,7 +465,6 @@ class game(object):
 			state[self.getCardIndex(card)+120] = 1
 		return state
 
-
 	def step(self, action_list):
 		#active player plays a card
 		#inputs: player_idx index of the player to play  a card
@@ -470,35 +475,39 @@ class game(object):
 		else:
 			action_idx = action_list
 
+		self.rewards = np.zeros((self.nu_players,))
+		info = {}
+
 		#0. check if gameOver
 		if self.gameOver:
-			#print(">>>Is already game over! Reset Game now")
+			print(">>>Is already game over! Reset Game now")
 			info = self.reset_game()
-			return self.rewards, self.gameOver, info
+			#return self.rewards, self.gameOver, info
 
-		#1. just play the card:
-		played_card = self.players[self.active_player].playBinaryCardIndex(action_idx)
-		#print(self.names_player[self.active_player],"plays random option: ", played_card,"action idx:", action_idx, "player:", self.active_player)
-		self.played_cards.append(played_card)
-		self.on_table_cards.append(played_card)
-
-		#2. Check if round is finished
-		if len(self.on_table_cards) == self.nu_players:
-			#evaluate winner
-			winning_card, on_table_win_idx, player_win_idx = self.evaluateWinner()
-			self.current_round +=1
-			self.gameOver   =  ((self.total_rounds)==self.current_round)
-			self.players[player_win_idx].appendCards(self.on_table_cards)
-			# assign rewards
-			self.rewards = np.zeros((self.nu_players,))
-			self.rewards[player_win_idx]  =  self.players[player_win_idx].countResult([self.on_table_cards])
-			#print(">>>"+ str(winning_card)+", "+str(self.names_player[player_win_idx])+" ("+str(player_win_idx)+") wins this round ["+str(self.current_round)+"/"+str(self.total_rounds)+"] rewards:", self.rewards,"\n")
-			self.on_table_cards = []
-			self.active_player  = player_win_idx
-			#if this player wins! do not call next player cause this player has to start next Round!
 		else:
-			#3. set next player:
-			self.active_player = self.getNextPlayer()
+			#1. just play the card:
+			played_card = self.players[self.active_player].playBinaryCardIndex(action_idx)
+			#print(self.names_player[self.active_player],"plays random option: ", played_card,"action idx:", action_idx, "player:", self.active_player)
+			self.played_cards.append(played_card)
+			self.on_table_cards.append(played_card)
+
+			#2. Check if round is finished
+			if len(self.on_table_cards) == self.nu_players:
+				#evaluate winner
+				winning_card, on_table_win_idx, player_win_idx = self.evaluateWinner()
+				self.current_round +=1
+				self.gameOver   =  ((self.total_rounds)==self.current_round)
+				self.players[player_win_idx].appendCards(self.on_table_cards)
+				# assign rewards
+				self.rewards[player_win_idx]  =  self.players[player_win_idx].countResult([self.on_table_cards])
+
+				print(">>>"+ str(winning_card)+", "+str(self.names_player[player_win_idx])+" ("+str(player_win_idx)+") wins this round ["+str(self.current_round)+"/"+str(self.total_rounds)+"] rewards:", self.rewards, "\n")
+				self.on_table_cards = []
+				self.active_player  = player_win_idx
+				#if this player wins! do not call next player cause this player has to start next Round!
+			else:
+				#3. set next player:
+				self.active_player = self.getNextPlayer()
 
 		# fill neuronal network inputs:
 		for i in range(self.nu_players):
@@ -506,9 +515,8 @@ class game(object):
 
 		return self.rewards, self.gameOver, {} #<-return info here!
 
-	def play_one_round(self, nu_rounds=3):
+	def play_rounds(self, nu_rounds=3):
 		#plays multiple rounds in steps!
-		#TODO:
 		for i in range(0, self.total_rounds*self.nu_players*nu_rounds+1*nu_rounds):
 			if not self.gameOver:
 				rand_option       = self.players[self.active_player].getRandomOption(self.getInColor())
@@ -545,4 +553,4 @@ class game(object):
 ####################################
 
 # game = game(["Tim", "Bob", "Lena", "Anja"])
-# game.play_one_round()
+# game.play_rounds(nu_rounds=3)

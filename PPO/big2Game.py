@@ -11,11 +11,10 @@ def worker(remote, parent_remote):
 	while True:
 		cmd, data = remote.recv()
 		if cmd == 'step':
-			#print("Hallo worker:, data:\n\n\n", data)
-			#data is just a number!
 			reward, done, info = my_game.step(data)
 			remote.send((reward, done, info))
 		elif cmd == 'reset':
+			print("inside reset!! This is never entered????!!!!!")
 			my_game.reset()
 			pGo, cState, availAcs = my_game.getState()
 			remote.send((pGo, cState))
